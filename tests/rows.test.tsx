@@ -258,6 +258,29 @@ test('/skin expand on hands a folded group to Claude Code opened, /skin expand o
   expect(await isLine(), 'expand off: the line is back').toBe(true)
 })
 
+test('/skin expand on: a click on the group’s line folds it to one line, a second click opens it again', async ($, on) => {
+  stubEngine(on)
+  await runSkin($, 'expand on')
+
+  const calls = [call('Read', {}), call('Read', {}), call('Grep', { pattern: 'x' })]
+  // Claude Code flips its flag on each click: it began false, a click makes it true.
+  const isLine = async (isExpanded: boolean) => {
+    const row = await $.ui.mount({ ...SITE, surface: 'terminal', component: 'ToolGroup', requestId: 'g-click', props: { calls, isActive: false, isExpanded } })
+    const found = (await row.find({ type: 'Text', text: /Read 2 · Search 1/ })) !== undefined
+    await row.unmount()
+
+    return found
+  }
+
+  expect(await isLine(false), 'drawn open as it began').toBe(false)
+  expect(await isLine(true), 'one click: folded to the line').toBe(true)
+  expect(await isLine(false), 'two clicks: open again').toBe(false)
+
+  await runSkin($, 'expand off')
+  expect(await isLine(false), 'expand off: the flag rules again, false is the line').toBe(true)
+  expect(await isLine(true), 'and true is Claude Code’s open group').toBe(false)
+})
+
 test('a typed prompt sits in an outline sized to its text, other senders keep their row', async ($, on) => {
   stubEngine(on)
 

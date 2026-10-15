@@ -281,6 +281,9 @@ let refusals = 0
 
 const drawingOf = (e: { surface: RenderSurface; requestId: string }): string => `${e.surface}:${e.requestId}`
 
+// What Claude Code's `isExpanded` read when a group was first drawn under `expand`.
+const groupStarts = new Map<string, boolean>()
+
 const drawnBy = (drawing: string, drawnAt: number) => (key: string, entranceMs: number) => {
   const card = `${drawing}:${key}`
 
@@ -945,9 +948,24 @@ reply width: ${lastColumns} columns`
       return next(e)
     }
 
-    // expand opens every group for Claude Code to draw, as if the person had.
-    if (e.props.isExpanded || active.prefs.expand) {
-      return next({ ...e, props: { ...e.props, isExpanded: true } })
+    const drawing = drawingOf(e)
+
+    if (active.prefs.expand) {
+      // expand opens every group for Claude Code to draw, as if the person had. A click on
+      // the group's line moves Claude Code's flag off the value it began at, and a second
+      // click puts it back: the first folds the group, the second opens it again.
+      const start = groupStarts.get(drawing) ?? e.props.isExpanded
+      groupStarts.set(drawing, start)
+
+      if (e.props.isExpanded === start) {
+        return next({ ...e, props: { ...e.props, isExpanded: true } })
+      }
+    } else {
+      groupStarts.delete(drawing)
+
+      if (e.props.isExpanded) {
+        return next(e)
+      }
     }
 
     return groupRow(lookOf($.ui.resolve(e), active, e.surface), e.props.calls)

@@ -67,7 +67,7 @@ To keep it installed but go back to Claude Code's own drawing, run `/skin off`.
 | `/skin tables on\|text\|off` | `text` draws tables and code as selectable text on the desktop |
 | `/skin prompt left\|right\|plain` | In the terminal, which side your prompt's outline sits on, or `plain` for a leading marker instead. The desktop keeps Claude Code's own messages, with copy and rewind |
 | `/skin words claude\|skin` | Whose words the spinner and the turn footer show. `claude` keeps Claude Code's own, whatever the skin says; `skin` (the default) draws the skin's |
-| `/skin expand on\|off` | `on` opens every run of reads and searches, with its rows, instead of the one line `Read 3 · Search 2`. `off` (the default) keeps the line, and a group you open yourself stays open |
+| `/skin expand on\|off` | `on` opens every run of reads and searches, with its rows, instead of the one line `Read 3 · Search 2`; click the first line to fold a group back to that line, and again to open it. `off` (the default) keeps the line, and a group you open yourself stays open |
 | `/skin gallery` | Every element the skin draws, numbered, to point at |
 | `/skin pin` · `unpin` · `share` | Give this folder its own look, drop it, or make it the default |
 
