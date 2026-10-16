@@ -228,6 +228,27 @@ test('a folded group is one node, an expanded one keeps its rows', async ($, on)
   expect(await expanded.find({ type: 'Text', text: 'stock row' })).toBeDefined()
 })
 
+test('a folded group ends in a ▸ that says a click opens it, > with ascii icons', async ($, on) => {
+  stubEngine(on)
+
+  const calls = [call('Read', {}), call('Read', {}), call('Grep', { pattern: 'x' })]
+  const ends = async (mark: string) => {
+    const row = await $.ui.mount({ ...SITE, surface: 'terminal', component: 'ToolGroup', requestId: 'g-marker', props: { calls, isActive: false, isExpanded: false } })
+    const found = (await row.find({ type: 'Text', text: new RegExp(`Read 2 · Search 1 +${mark}$`) })) !== undefined
+    const button = (await row.find({ type: 'Button' })) !== undefined
+    await row.unmount()
+
+    return { found, button }
+  }
+
+  expect((await ends('▸')).found, 'the line ends in ▸').toBe(true)
+  expect((await ends('▸')).button, 'a text, not a button: the click still reaches Claude Code').toBe(false)
+
+  await runSkin($, 'icons ascii')
+  expect((await ends('>')).found, 'ascii icons: a > instead').toBe(true)
+  expect((await ends('▸')).found, 'and no ▸').toBe(false)
+})
+
 test('/skin expand on hands a folded group to Claude Code opened, /skin expand off draws the one-line group again', async ($, on) => {
   // What Claude Code is asked to draw, with the flag the skin left on it. It answers before
   // the stub, which draws every row that reaches it.

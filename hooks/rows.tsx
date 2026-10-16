@@ -239,7 +239,8 @@ export function quietResult(look: Look, failure: string | null) {
   )
 }
 
-// A run of reads and searches on one node: `●─ Read 3 · Search 2`.
+// A run of reads and searches on one node: `●─ Read 3 · Search 2 ▸`. The `▸` is plain text,
+// not a button: a click anywhere on the line is Claude Code's, and opens the group.
 export function groupRow(look: Look, calls: readonly Call[]) {
   const { Text } = look.ui
   const { palette } = look.skin
@@ -255,6 +256,8 @@ export function groupRow(look: Look, calls: readonly Call[]) {
     <Text color={palette[kind]}>{KIND_LABEL[kind]}</Text>,
     <Text color={palette.muted}>{` ${count}`}</Text>,
   ])
+
+  parts.push(<Text color={palette.muted} dimColor>{look.prefs.icons === 'ascii' ? '  >' : '  ▸'}</Text>)
 
   if (look.svg !== undefined) {
     const lead = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'other'
