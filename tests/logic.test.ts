@@ -7,7 +7,7 @@ import { runDesign } from '../hooks/designer'
 import { clipLines, diffstat, formatDuration, formatMs, pick, shortenPath } from '../hooks/format'
 import { columnWidths, copyOf, cutCell, padCell, splitReply, widthOf, wrapLines } from '../hooks/markdown'
 import { codeSvg, tokenize } from '../hooks/svg-code'
-import { fitText, settled } from '../hooks/svg-kit'
+import { CONTROL_SLOT, fitText, measure as measureAt, settled } from '../hooks/svg-kit'
 import { diffLines, diffSvg, hunksOf } from '../hooks/svg-diff'
 import { fitColumns, kindOfCell, measure, tableSvg, wrapCell } from '../hooks/svg-table'
 import { outputLines, shellOutputOf, terminalSvg } from '../hooks/svg-terminal'
@@ -381,6 +381,69 @@ test('short columns keep their width and long ones share the rest', async () => 
   expect(hash).toBe(20)
   expect(who).toBe(60)
   expect(Math.round((why ?? 0) + 20 + 60 + 2 * 28 + 2 * 24)).toBe(700)
+})
+
+test('a long cell keeps every line unless asked to cap them', async () => {
+  const lines = wrapCell('word '.repeat(80).trim(), 60, false)
+
+  expect(lines.length > 6).toBe(true)
+  expect(lines.join(' ')).toBe('word '.repeat(80).trim())
+})
+
+test('crowded columns start from their longest word, give the fullest the most, and stay inside the card', async () => {
+  const least = [56, 65, 60, 70, 100]
+  const widths = fitColumns([56, 120, 110, 105, 2000], 760, 84, least)
+  const room = 760 - 2 * 24 - 84 - 4 * 28
+
+  expect(Math.round(widths.reduce((sum, w) => sum + w, 0))).toBe(room)
+  expect(widths.every((w, i) => w >= (least[i] ?? 0))).toBe(true)
+  expect((widths[4] ?? 0) > 2 * (widths[1] ?? 0)).toBe(true)
+})
+
+test('a crowded table shows every word of every cell and header, and splits none', async () => {
+  const note =
+    'It accepts every reading that corrects the storage-gauge misread: 21.5 (Sol) up to 27.2–27.7 (the DC on the start-up day). ' +
+    'It fails the three wrong answers: 63.2 (the published winter record), 15 (no overwintering) and 18.8 (the sheet total), and ends on FINISHED'
+  const header = ['#', 'Where it appears', 'What it measures', 'Expected range', 'Note']
+  const row = ['27', 'Season summary', 'TSK starting DC', 'about 20.0–28.0', note]
+  const card = tableSvg({ kind: 'table', header, align: header.map(() => 'left' as const), rows: [row] }, tokyoNight.palette, 760, true)
+  const words = new Set([...card.source.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].flatMap(match => (match[1] ?? '').split(' ')))
+
+  expect(card.source).not.toContain('…')
+  expect([...header.map(cell => cell.toUpperCase()), ...row].flatMap(cell => cell.split(' ')).every(word => words.has(word))).toBe(true)
+})
+
+const textsOf = (source: string, cls: string): { x: number; text: string }[] =>
+  [...source.matchAll(/<text x="([\d.]+)"[^>]*class="([^"]*)"[^>]*>([^<]*)<\/text>/g)]
+    .filter(match => match[2] === cls)
+    .map(match => ({ x: Number(match[1]), text: match[3] ?? '' }))
+
+test('rows run under the Copy button while the last header label stays clear of it', async () => {
+  const note = 'a long note that fills its column from one side to the other '.repeat(8).trim()
+  const header = ['#', 'What the row actually says about the reading']
+  const card = tableSvg({ kind: 'table', header, align: ['left', 'left'], rows: [['1', note]] }, tokyoNight.palette, 760, true)
+  const copyEdge = 760 - 24 - CONTROL_SLOT
+  const headWidth = (line: string) => measureAt(line, false, 12) + [...line].length * 1.2
+
+  expect(textsOf(card.source, '').some(line => line.x + measure(line.text, false) > copyEdge)).toBe(true)
+  expect(textsOf(card.source, 'head').every(line => line.x + headWidth(line.text) <= copyEdge)).toBe(true)
+  expect(card.source).toContain(`x2="${760 - 24}"`)
+})
+
+test('a last column too narrow to clear the Copy button keeps the gutter', async () => {
+  const card = tableSvg({ kind: 'table', header: ['Note', 'N'], align: ['left', 'left'], rows: [['word '.repeat(60).trim(), '12']] }, tokyoNight.palette, 760, true)
+  const [count] = textsOf(card.source, 'num')
+
+  expect(Math.round(count?.x ?? 0)).toBe(760 - 24 - CONTROL_SLOT - 56)
+})
+
+test('a right-aligned last column keeps the gutter, so its label and its numbers end on one line', async () => {
+  const card = tableSvg({ kind: 'table', header: ['Note', 'Count'], align: ['left', 'right'], rows: [['word '.repeat(60).trim(), '12']] }, tokyoNight.palette, 760, true)
+  const [count] = textsOf(card.source, 'num')
+  const [, label] = textsOf(card.source, 'head')
+
+  expect(Math.round(count?.x ?? 0)).toBe(760 - 24 - CONTROL_SLOT)
+  expect(Math.round(label?.x ?? 0)).toBe(Math.round(count?.x ?? 0))
 })
 
 test('a light palette is derived with dark text, light bands and deepened colours', async () => {
