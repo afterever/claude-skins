@@ -392,14 +392,15 @@ const sourceOf = (look: Look, key: string, built: { source: string; entranceMs: 
 
 // A card drawn as an image, with its Copy button laid over the top-right corner the card
 // left free. The image cannot be pressed, so the button is a real one on top of it; the
-// box hugs the image so the corner is the card's, not the column's.
-function cardWithCopy(look: Look, Svg: SvgElement, built: { source: string; alt: string; width: number; height: number; entranceMs: number }, key: string, text: string) {
+// box hugs the image so the corner is the card's, not the column's. The image takes the
+// markup's own size, so one drawn wider than the reply column is scaled down to fit it.
+function cardWithCopy(look: Look, Svg: SvgElement, built: { source: string; alt: string; entranceMs: number }, key: string, text: string) {
   const { Box, Button } = look.ui
   const copy = look.copy
 
   return (
     <Box marginY={1} alignSelf="flex-start">
-      <Svg source={sourceOf(look, key, built)} alt={built.alt} width={built.width} height={built.height} />
+      <Svg source={sourceOf(look, key, built)} alt={built.alt} />
       {copy === undefined ? (
         ''
       ) : (

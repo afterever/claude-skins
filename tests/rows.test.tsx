@@ -6,6 +6,7 @@ import { DESIGN_TOOL } from '../hooks/designer'
 import { widthOf } from '../hooks/markdown'
 import { mermaidArt } from '../hooks/mermaid-art'
 import { literal } from '../hooks/rows'
+import { cardWidth } from '../hooks/svg-kit'
 import noir from '../hooks/themes/noir'
 
 const SURFACES = ['terminal', 'desktop'] as const
@@ -691,6 +692,23 @@ test('the desktop draws a table as an animated vector card, with a tooltip on a 
   expect(svg?.props.source).toContain('<circle')
   expect(svg?.props.source).toContain('x&lt;y')
   expect(svg?.props.alt).toContain('Skin | Accent | Note')
+})
+
+test('a desktop card with a Copy button leaves its size to its markup, so one wider than the reply is scaled to fit', async ($, on) => {
+  stubEngine(on)
+
+  const ui = await $.ui.mount({ ...SITE, surface: 'desktop', component: 'AssistantMessage', requestId: 'r4', props: { text: '| a | b |\n|---|---|\n| 1 | 2 |', isFirstOfReply: true } })
+  const svg = (await ui.find({ type: 'Svg' })) as { props: { width?: number; height?: number } } | undefined
+
+  expect(svg).toBeDefined()
+  expect(svg?.props.width).toBeUndefined()
+  expect(svg?.props.height).toBeUndefined()
+})
+
+test('a card spans the reply column the desktop reports, within its range', async () => {
+  expect(cardWidth(106)).toBe(763)
+  expect(cardWidth(10)).toBe(480)
+  expect(cardWidth(400)).toBe(1600)
 })
 
 test('a card animates on its first draw only, so a streaming reply does not flicker', async ($, on) => {
