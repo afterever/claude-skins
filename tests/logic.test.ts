@@ -546,6 +546,17 @@ test('inline runs pick out code, emphasis, numbers, versions, paths and duration
   expect(styled('*quiet* and ~~gone~~')).toEqual(['italic:quiet', 'strike:gone'])
 })
 
+test('inline runs colour both numbers of a range or date, but not a digit hyphenated onto a word', () => {
+  const numbers = (text: string) => inlineRuns(text).filter(run => run.style === 'number').map(run => run.text)
+
+  expect(numbers('timestamp (10-20 16:01)')).toEqual(['10', '20', '16', '01'])
+  expect(numbers('see lines 10-20 on 2026-10-20')).toEqual(['10', '20', '2026', '10', '20'])
+  expect(numbers('1-2-3')).toEqual(['1', '2', '3'])
+  // A hyphen after a word, or after digits that are part of one, still guards the number.
+  expect(numbers('gpt-4 utf-8 sha-256 x86-64 mp3-128')).toEqual([])
+  expect(numbers('a -5 offset')).toEqual([])
+})
+
 test('quiet output splits a command on its separators and leaves quoted ones alone', () => {
   expect(segmentsOf('git status && ls -la | head; echo "a; b && c"')).toEqual(['git status', 'ls -la', 'head', 'echo "a; b && c"'])
   expect(segmentsOf("grep 'x|y' file")).toEqual(["grep 'x|y' file"])

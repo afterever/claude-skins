@@ -34,25 +34,31 @@ const FENCE = /^\s*(```|~~~)/
 const INLINE = /(`+)([^`]+?)\1|\*\*(?=\S)(.+?)(?<=\S)\*\*|__(?=\S)(.+?)(?<=\S)__|~~(?=\S)(.+?)(?<=\S)~~|(?<![\w*])\*(?=\S)(.+?)(?<=\S)\*(?![\w*])|(?<![\w_])_(?=\S)(.+?)(?<=\S)_(?![\w_])/g
 
 // Ordered so a URL wins over the path inside it, and a path over its version or number. A
-// path keeps a `:line` or `:line:col` after it.
+// path keeps a `:line` or `:line:col` after it. A number is not one when a word, a dot or a
+// hyphen sits against it (`gpt-4`, `x86-64`), except the second of a pair of plain numbers
+// (`10-20`, `2026-10-20`).
 const HIGHLIGHT: readonly (readonly [RunStyle, RegExp])[] = [
-  ['url', /\bhttps?:\/\/[^\s<>()"'`]*[^\s<>()"'`.,;:!?]/],
-  ['path', /(?:(?:[A-Za-z]:[\\/]|~\/|\.{1,2}\/|(?<![\w)])\/(?=[\w.@-]+\/))[\w.@-]+(?:[\\/][\w.@-]+)*\/?|(?<![\w/.-])[\w@-]+(?:\/[\w.@-]+)*\/[\w-]+\.[A-Za-z][A-Za-z0-9]{0,5}\b)(?::\d+(?::\d+)?\b)?/],
-  ['version', /(?<![\w.-])v\d+(?:\.\d+)*(?:-[\w.]+)?\b|(?<![\w.-])\d+\.\d+\.\d+(?:-[\w.]+)?\b/],
-  ['duration', /(?<![\w.-])\d+(?:\.\d+)?(?:ns|µs|us|ms|s|min|h)\b/],
-  ['number', /(?<![\w.-])\d[\d,_]*(?:\.\d+)?%?(?![\w])/],
+  ['url', /\bhttps?:\/\/[^\s<>()"'`]*[^\s<>()"'`.,;:!?]/g],
+  ['path', /(?:(?:[A-Za-z]:[\\/]|~\/|\.{1,2}\/|(?<![\w)])\/(?=[\w.@-]+\/))[\w.@-]+(?:[\\/][\w.@-]+)*\/?|(?<![\w/.-])[\w@-]+(?:\/[\w.@-]+)*\/[\w-]+\.[A-Za-z][A-Za-z0-9]{0,5}\b)(?::\d+(?::\d+)?\b)?/g],
+  ['version', /(?<![\w.-])v\d+(?:\.\d+)*(?:-[\w.]+)?\b|(?<![\w.-])\d+\.\d+\.\d+(?:-[\w.]+)?\b/g],
+  ['duration', /(?<![\w.-])\d+(?:\.\d+)?(?:ns|µs|us|ms|s|min|h)\b/g],
+  ['number', /(?<![\w.]|(?<!\b\d+)-)\d[\d,_]*(?:\.\d+)?%?(?![\w])/g],
 ]
 
-// Splits plain text into runs, the earliest match of any kind taking each stretch.
+// Splits plain text into runs, the earliest match of any kind taking each stretch. Each
+// pattern scans the whole text from the current offset, so a lookbehind still sees what the
+// run before it consumed.
 function highlight(text: string): Run[] {
   const runs: Run[] = []
-  let rest = text
+  let at = 0
 
-  while (rest !== '') {
+  while (at < text.length) {
     let best: { style: RunStyle; index: number; length: number } | null = null
 
     for (const [style, pattern] of HIGHLIGHT) {
-      const match = pattern.exec(rest)
+      pattern.lastIndex = at
+
+      const match = pattern.exec(text)
 
       if (match !== null && match[0] !== '' && (best === null || match.index < best.index)) {
         best = { style, index: match.index, length: match[0].length }
@@ -60,16 +66,16 @@ function highlight(text: string): Run[] {
     }
 
     if (best === null) {
-      runs.push({ style: 'plain', text: rest })
+      runs.push({ style: 'plain', text: text.slice(at) })
       break
     }
 
-    if (best.index > 0) {
-      runs.push({ style: 'plain', text: rest.slice(0, best.index) })
+    if (best.index > at) {
+      runs.push({ style: 'plain', text: text.slice(at, best.index) })
     }
 
-    runs.push({ style: best.style, text: rest.slice(best.index, best.index + best.length) })
-    rest = rest.slice(best.index + best.length)
+    runs.push({ style: best.style, text: text.slice(best.index, best.index + best.length) })
+    at = best.index + best.length
   }
 
   return runs
