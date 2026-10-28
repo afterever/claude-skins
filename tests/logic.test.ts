@@ -594,6 +594,17 @@ test('inline runs colour both numbers of a range or date, but not a digit hyphen
   expect(numbers('a -5 offset')).toEqual([])
 })
 
+test('inline runs keep a comma or underscore in a number only between digits', () => {
+  const numbers = (text: string) => inlineRuns(text).filter(run => run.style === 'number').map(run => run.text)
+
+  expect(numbers('3, 4 and 5')).toEqual(['3', '4', '5'])
+  expect(numbers('rows 10, then (3, 4)')).toEqual(['10', '3', '4'])
+  expect(numbers('on 2026-10-20, at 16:01')).toEqual(['2026', '10', '20', '16', '01'])
+  expect(numbers('1_000, 3,,4')).toEqual(['1_000', '3', '4'])
+  // Thousands groups and decimals stay whole.
+  expect(numbers('3,301 and 12,345,678 and 1,000.50 and 12,345%')).toEqual(['3,301', '12,345,678', '1,000.50', '12,345%'])
+})
+
 test('quiet output splits a command on its separators and leaves quoted ones alone', () => {
   expect(segmentsOf('git status && ls -la | head; echo "a; b && c"')).toEqual(['git status', 'ls -la', 'head', 'echo "a; b && c"'])
   expect(segmentsOf("grep 'x|y' file")).toEqual(["grep 'x|y' file"])
