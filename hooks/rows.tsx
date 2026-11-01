@@ -2,7 +2,7 @@ import type { ElementTable, RenderSurface } from 'claude-code'
 
 import type { Prefs, Touch, TurnStats } from '../types'
 import { formatDuration, formatMs } from './format'
-import { columnWidths, isShell, tableArt, widthOf, wrapLines } from './markdown'
+import { columnWidths, hardBreaks, isShell, tableArt, widthOf, wrapLines } from './markdown'
 import { diffFenceTag, diffRows, fenceDiff, newOnly } from './diff-fence'
 import { FOLD_CODE, FOLD_ROWS, foldButton, shownCount } from './fold'
 import type { Segment, Table } from './markdown'
@@ -534,7 +534,7 @@ function segmentRow(look: Look, segment: Segment, i: number, maxWidth: number, S
     return look.prefs.markdown ? (
       <Box flexDirection="column">{blockRows(look, splitBlocks(text, { prose: look.surface === 'terminal' }))}</Box>
     ) : (
-      <Markdown text={text} />
+      <Markdown text={hardBreaks(text)} />
     )
   }
 

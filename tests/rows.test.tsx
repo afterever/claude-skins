@@ -452,6 +452,20 @@ test('the markdown pack draws alerts and task lists everywhere, headings and par
   expect(await off.find({ type: 'Text', text: 'stock row' })).toBeDefined()
 })
 
+test('a desktop reply keeps the line breaks it was written with, inside a paragraph and in an alert', async ($, on) => {
+  stubEngine(on)
+
+  // The table is what brings the skin in on the desktop; the prose beside it is the point.
+  const text = '`\u2605 Insight`\nThe vacation lands inside the chain.\n\n> [!NOTE]\n> One line.\n> And the next.\n\n| Route | Limit |\n|---|--:|\n| /chat | 60 |'
+  const desktop = await $.ui.mount({ ...SITE, surface: 'desktop', component: 'AssistantMessage', requestId: 'breaks', props: { text, isFirstOfReply: true } })
+
+  const blocks = (await desktop.findAll({ type: 'Markdown' })) as readonly Found[]
+  const prose = blocks.map(block => block?.props.text as string)
+  expect(prose.some(block => block.includes('`\u2605 Insight`  \nThe vacation lands inside the chain.'))).toBe(true)
+  expect(prose.some(block => block.includes('One line.  \nAnd the next.'))).toBe(true)
+  await desktop.unmount()
+})
+
 test('a terminal table sizes Korean, Chinese, Japanese and emoji cells to their full width', async ($, on) => {
   stubEngine(on)
 

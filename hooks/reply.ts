@@ -2,7 +2,7 @@ import type { RenderSurface } from 'claude-code'
 
 import type { Prefs } from '../types'
 import { drawsBlocks, hasBlocks } from './blocks'
-import { isShell, splitReply } from './markdown'
+import { hardBreaks, isShell, splitReply } from './markdown'
 import type { Segment } from './markdown'
 import { inlineMath } from './math'
 import { parseMermaid } from './mermaid'
@@ -35,7 +35,9 @@ export function replySegments(text: string, prefs: Prefs, surface: RenderSurface
     : charts || math
       ? splitReply(text, { tables: false, fence: (lang, code) => charts && charted(lang, code), math })
       : [{ kind: 'text', text }]
-  const fits = segments.every(segment => segment.kind === 'table' || (segment.kind === 'text' ? segment.text : segment.raw).length <= MAX_MARKDOWN)
+  // Measured as Markdown will take it: hard breaks add two characters a line, and a
+  // segment that grows past the cap is left to Claude Code whole.
+  const fits = segments.every(segment => segment.kind === 'table' || (segment.kind === 'text' ? hardBreaks(segment.text) : segment.raw).length <= MAX_MARKDOWN)
   // Off the terminal a shell fence keeps the app's drawing, for its Run button; a reply
   // with nothing else to draw is left to the app whole.
   const kept = surface === 'terminal' ? segments : segments.filter(segment => !isShell(segment))

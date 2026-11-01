@@ -1,5 +1,6 @@
 import type { AlertType, Block, Line, Run, RunStyle, Task } from './blocks'
 import { safeHref, touchOf } from './links'
+import { hardBreaks } from './markdown'
 import type { Look } from './rows'
 import type { Palette } from './skin'
 
@@ -98,7 +99,7 @@ function alertBox(look: Look, type: AlertType, body: string) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={color} paddingX={1}>
       <Text color={color} bold>{`${look.prefs.icons === 'ascii' ? alert.ascii : alert.unicode} ${alert.title}`}</Text>
-      {body === '' ? null : <Markdown text={body} />}
+      {body === '' ? null : <Markdown text={hardBreaks(body)} />}
     </Box>
   )
 }
@@ -131,7 +132,7 @@ export function blockRows(look: Look, blocks: readonly Block[]) {
 
     switch (block.kind) {
       case 'markdown':
-        return <Markdown text={block.text} />
+        return <Markdown text={hardBreaks(block.text)} />
       case 'heading':
         return <Box marginTop={gap}>{headingRow(look, block.level, block.text)}</Box>
       case 'alert':

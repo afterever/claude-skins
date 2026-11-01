@@ -5,7 +5,7 @@ import { foldLines, shellResultOf, shellStatus } from '../hooks/shell'
 import { buildCustom, resolveSkin, skinNames, withSlot } from '../hooks/custom'
 import { runDesign } from '../hooks/designer'
 import { clipLines, diffstat, formatDuration, formatMs, pick, shortenPath } from '../hooks/format'
-import { columnWidths, copyOf, cutCell, padCell, splitReply, widthOf, wrapLines } from '../hooks/markdown'
+import { columnWidths, copyOf, cutCell, hardBreaks, padCell, splitReply, widthOf, wrapLines } from '../hooks/markdown'
 import { codeSvg, tokenize } from '../hooks/svg-code'
 import { CONTROL_SLOT, fitText, measure as measureAt, settled } from '../hooks/svg-kit'
 import { diffLines, diffSvg, hunksOf } from '../hooks/svg-diff'
@@ -565,6 +565,20 @@ test('the markdown pack lifts alerts, task lists and headings out of a reply and
 
   const prose = splitBlocks('## Plan\n\nRan 54 tests.\n\n- [ ] ship', { prose: false })
   expect(prose.map(block => block.kind)).toEqual(['markdown', 'tasks'])
+})
+
+test('hard breaks keep the line breaks a reply was written with, and stay out of fences', async () => {
+  // Two lines of one paragraph: Markdown would run them together without the break.
+  expect(hardBreaks('Ran the tests.\nAll 54 passed.')).toBe('Ran the tests.  \nAll 54 passed.')
+  // A blank line already parts two paragraphs, and the last line has nothing to carry on to.
+  expect(hardBreaks('First.\n\nSecond.')).toBe('First.\n\nSecond.')
+  // A fence is code: two spaces there would be part of it.
+  expect(hardBreaks('Run it:\n```sh\nnpm test\nnpm run build\n```\nThen look.')).toBe(
+    'Run it:  \n```sh\nnpm test\nnpm run build\n```\nThen look.',
+  )
+  // A line that already ends in a break, either way of writing one, is left as it is.
+  expect(hardBreaks('Kept.  \nAnd.')).toBe('Kept.  \nAnd.')
+  expect(hardBreaks('Kept.\\\nAnd.')).toBe('Kept.\\\nAnd.')
 })
 
 test('inline runs pick out code, emphasis, numbers, versions, paths and durations', async () => {

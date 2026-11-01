@@ -22,6 +22,31 @@ export const isShell = (segment: Segment): boolean => segment.kind === 'code' &&
 const SEPARATOR = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)\s*([\w+#.-]*)/
 
+// Claude Code's own drawing keeps a line break the model wrote; the engine's Markdown
+// reads a lone newline as a soft break and runs the two lines together. The two spaces
+// that make it a hard break go on every line a paragraph carries on, so markdown the skin
+// hands back keeps the shape it was written in. A line in a fence is left alone, where the
+// spaces would be part of the code, and a line that already ends in a break keeps it.
+export function hardBreaks(markdown: string): string {
+  const lines = markdown.split('\n')
+  let inFence = false
+
+  return lines
+    .map((line, i) => {
+      if (FENCE.test(line)) {
+        inFence = !inFence
+
+        return line
+      }
+
+      // A blank line on either side already parts the two, and so does the end of the text.
+      const parted = line.trim() === '' || (lines[i + 1] ?? '').trim() === ''
+
+      return inFence || parted || / {2}$/.test(line) || line.endsWith('\\') ? line : `${line}  `
+    })
+    .join('\n')
+}
+
 // Inline emphasis and code ticks read as noise in a padded cell.
 const clean = (cell: string): string =>
   cell.replace(/\*\*|__|`/g, '').replace(/\\\|/g, '|').trim()
