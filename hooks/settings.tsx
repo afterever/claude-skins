@@ -156,7 +156,7 @@ export function settingsPane(look: Look, ui: PaneUi, model: SettingsModel, actio
           />
           <Input
             key="hex"
-            label={colourOf(palette, model.editing)}
+            label={colourOf(palette, model.editing) ?? 'none'}
             placeholder="#rrggbb"
             value=""
             submitLabel="paint"

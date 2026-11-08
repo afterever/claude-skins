@@ -10,14 +10,28 @@ export type ToolKind = Exclude<Kind, 'other'>
 
 export type Slot = SkinSlot
 
-// The slots every skin fills; `border` is the one it may leave out.
-export type ColourSlot = Exclude<Slot, 'border'>
+// The slots a skin may leave out: the typed prompt's outline, text and fill.
+export type OptionalSlot = 'border' | 'promptFg' | 'promptBg'
 
-// Every slot but `border` is filled by every skin; `border` is only there when a skin sets it.
-export type Palette = Readonly<Record<ColourSlot, string>> & { readonly border?: string }
+// The slots every skin fills.
+export type ColourSlot = Exclude<Slot, OptionalSlot>
 
-// The colour a slot paints: `border` follows `muted` until a skin sets it.
-export const colourOf = (palette: Palette, slot: Slot): string => palette[slot] ?? palette.muted
+// Every slot but the optional ones is filled by every skin; those are only there when a skin sets them.
+export type Palette = Readonly<Record<ColourSlot, string>> & { readonly [S in OptionalSlot]?: string }
+
+// What an unset optional slot follows. `promptBg` follows nothing: no fill.
+const FOLLOWS: Readonly<Partial<Record<Slot, ColourSlot>>> = { border: 'muted', promptFg: 'fg' }
+
+// The colour a slot paints: `border` follows `muted` and `promptFg` follows `fg` until a skin
+// sets them; `promptBg` is undefined until it does.
+export function colourOf(palette: Palette, slot: Exclude<Slot, 'promptBg'>): string
+export function colourOf(palette: Palette, slot: Slot): string | undefined
+export function colourOf(palette: Palette, slot: Slot): string | undefined {
+  const own = palette[slot]
+  const follows = FOLLOWS[slot]
+
+  return own ?? (follows === undefined ? undefined : palette[follows])
+}
 
 export type Skin = {
   readonly name: string
