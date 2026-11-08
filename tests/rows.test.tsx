@@ -361,6 +361,45 @@ test('the prompt outline follows muted until a skin sets border', async ($, on) 
   expect(await outline(), 'a skin that sets border draws the outline in it').toBe('#ff8800')
 })
 
+test('a skin that sets promptFg and promptBg draws the typed prompt as a sign', async ($, on) => {
+  stubEngine(on)
+
+  type Props = { backgroundColor?: string; borderColor?: string; color?: string; bold?: boolean }
+  type Node = { props?: Props; children?: readonly Node[] }
+
+  // Only the terminal draws the typed prompt in the skin; the desktop keeps Claude Code's own.
+  const prompt = async () => {
+    const typed = await $.ui.mount({ ...SITE, surface: 'terminal', component: 'UserMessage', requestId: 'm1', props: { text: 'fix the build', origin: { kind: 'composer' }, isExpanded: false } })
+    const column = (await typed.find({ type: 'Box' })) as Node | undefined
+    const text = (await typed.find({ type: 'Text', text: 'fix the build' })) as Node | undefined
+    const markdown = await typed.find({ type: 'Markdown' })
+    await typed.unmount()
+
+    return { box: column?.children?.[0]?.props, text: text?.props, markdown }
+  }
+
+  await runSkin($, 'gruvbox')
+  const usual = await prompt()
+  expect(usual.box?.backgroundColor, 'no fill unless a skin sets one').toBeUndefined()
+  expect(usual.text?.color, 'the text follows fg').toBe(gruvbox.palette.fg)
+  expect(usual.text?.bold, 'and is not bold').toBeUndefined()
+
+  await $.tool.call({ tool: 'mcp__skins__design', action: 'save', name: 'caution', base: 'gruvbox', palette: { promptFg: '#000000', promptBg: '#e0b000' } })
+
+  const sign = await prompt()
+  expect(sign.box?.backgroundColor, 'the fill').toBe('#e0b000')
+  expect(sign.text?.color, 'the text').toBe('#000000')
+  expect(sign.text?.bold, 'sign lettering is bold').toBe(true)
+  expect(sign.markdown, 'drawn as Text: the host Markdown takes no colour').toBeUndefined()
+  expect(sign.box?.borderColor, 'the outline still follows muted').toBe(gruvbox.palette.muted)
+
+  await $.tool.call({ tool: 'mcp__skins__design', action: 'save', name: 'fill-only', base: 'gruvbox', palette: { promptBg: '#e0b000' } })
+  expect((await prompt()).box?.backgroundColor, 'a fill without promptFg is not drawn').toBeUndefined()
+
+  await $.tool.call({ tool: 'mcp__skins__design', action: 'save', name: 'ink-only', base: 'gruvbox', palette: { promptFg: '#000000' } })
+  expect((await prompt()).text?.bold, 'a text colour alone is not bold').toBeUndefined()
+})
+
 test('a prompt in Markdown shows its marks as typed, and brackets and parentheses never open math', () => {
   expect(literal('a *b* `c` #d')).toBe('a \\*b\\* \\`c\\` \\#d')
   // `\(…\)` and `\[…\]` are inline and display math in the desktop app's Markdown, and `\,` a thin space.

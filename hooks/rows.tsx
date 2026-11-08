@@ -312,13 +312,24 @@ export function promptRow(look: Look, text: string, images?: ReturnType<Ui['Text
   const { Box, Markdown, Text } = look.ui
   const markdown = look.surface === 'terminal' ? null : literal(text)
   const plain = look.prefs.prompt === 'plain'
+  // A skin that sets `promptFg` draws the text itself: Markdown, which the settings pane and the
+  // gallery use off the terminal, takes no colour, so a fill under its text could not be read. The
+  // fill (`promptBg`) comes with it.
+  const inked = look.skin.palette.promptFg !== undefined
+  const fill = inked && !plain ? look.skin.palette.promptBg : undefined
 
   return (
     <Box flexDirection="column" alignItems={look.prefs.prompt === 'right' ? 'flex-end' : 'flex-start'} marginY={1}>
-      <Box {...(plain ? {} : { borderStyle: 'round' as const, borderColor: colourOf(look.skin.palette, 'border'), paddingX: 1 })} flexShrink={1}>
+      <Box
+        {...(plain ? {} : { borderStyle: 'round' as const, borderColor: colourOf(look.skin.palette, 'border'), paddingX: 1 })}
+        {...(fill === undefined ? {} : { backgroundColor: fill })}
+        flexShrink={1}
+      >
         {plain ? <Text color={look.skin.palette.user}>{`${look.icons.prompt} `}</Text> : ''}
-        {markdown === null || markdown.length > MAX_MARKDOWN ? (
-          <Text color={look.skin.palette.fg}>{text}</Text>
+        {markdown === null || markdown.length > MAX_MARKDOWN || inked ? (
+          <Text color={colourOf(look.skin.palette, 'promptFg')} {...(fill === undefined ? {} : { bold: true })}>
+            {text}
+          </Text>
         ) : (
           <Markdown text={markdown} />
         )}

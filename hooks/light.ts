@@ -18,6 +18,21 @@ const toHex = (rgb: readonly number[]): string =>
 export const deepen = (hex: string, amount: number): string =>
   toHex(channels(hex).map(value => value * (1 - amount)))
 
+// The prompt's text and fill are a pair that is read against each other, not against the page, so
+// the text is kept and the fill only deepened a little to stand off white. A text colour set alone
+// sits on the page and is deepened like any accent.
+function lightPrompt(palette: Palette): Pick<Palette, 'promptFg' | 'promptBg'> {
+  const { promptFg, promptBg } = palette
+
+  if (promptFg === undefined) {
+    return {}
+  }
+
+  return promptBg === undefined
+    ? { promptFg: deepen(promptFg, 0.45) }
+    : { promptFg, promptBg: deepen(promptBg, 0.12) }
+}
+
 export function toLight(palette: Palette): Palette {
   const deep = (hex: string) => deepen(hex, 0.45)
 
@@ -35,6 +50,7 @@ export function toLight(palette: Palette): Palette {
     surface: '#ffffff',
     zebra: '#f2f2f2',
     ...(palette.border === undefined ? {} : { border: deep(palette.border) }),
+    ...lightPrompt(palette),
     ok: deepen(palette.ok, 0.5),
     err: deepen(palette.err, 0.25),
     warn: deepen(palette.warn, 0.5),

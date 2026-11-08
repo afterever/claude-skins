@@ -79,7 +79,7 @@ Built-in skins: `noir`, `tokyo-night`, `dracula`, `catppuccin`, `rose-pine`, `no
 | Command | What it does |
 |---|---|
 | `/skin tables on/text/off` | Tables as cards, as selectable text on the desktop, or Claude Code's own |
-| `/skin prompt left/right/plain` | In the terminal, which side your prompt's outline sits on, or a plain leading marker. The outline is drawn in the skin's optional `border` colour, or `muted` where a skin does not set one. The desktop keeps Claude Code's own messages, with copy and rewind |
+| `/skin prompt left/right/plain` | In the terminal, which side your prompt's outline sits on, or a plain leading marker. The outline is drawn in the skin's optional `border` colour, or `muted` where a skin does not set one. A skin can also set `promptFg` and `promptBg` for the box's text and fill (black bold on amber, like a road sign). The desktop keeps Claude Code's own messages, with copy and rewind |
 | `/skin words claude/skin` | Whose words the spinner and the turn footer show: Claude Code's own, or the skin's (the default) |
 | `/skin icons unicode/ascii` | The icon set, and ASCII-only diagrams in the terminal |
 
@@ -109,6 +109,19 @@ Built-in skins: `noir`, `tokyo-night`, `dracula`, `catppuccin`, `rose-pine`, `no
 **Design one with Claude.** Ask "make me a skin that feels like a sunset". skins gives Claude a
 `design` tool, so it builds the skin and applies it while you watch. Repainting a built-in skin saves
 it as your own `my-<skin>`. Choices are remembered across sessions.
+
+**Example: a caution-sign prompt.** Like the yellow sign on a wet floor, your typed prompt can be
+bold black lettering on an amber panel, edged in black, so it reads at a glance among the replies. Ask
+Claude for "a caution-sign prompt", or save it yourself with the `design` tool:
+
+```json
+{ "action": "save", "name": "caution", "base": "noir",
+  "palette": { "promptFg": "#000000", "promptBg": "#e0b000", "border": "#000000" } }
+```
+
+`#e0b000` is a softened amber, in the family of real safety yellow but gentler on a dark terminal than
+pure `#ffd400`. Swap it for `#c9a000` (duller) or `#d99a00` (warmer) to taste. It shows in the
+terminal; the desktop app keeps Claude Code's own messages.
 
 ## Preview
 

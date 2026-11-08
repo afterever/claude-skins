@@ -168,6 +168,25 @@ test('border is an optional slot: no built-in sets it, a made skin may, and its 
   expect(buildCustom({ name: 'x', palette: { border: 'red' } }, undefined)).toContain('bad palette')
 })
 
+test('promptFg and promptBg are optional slots: text follows fg, no fill, and the light palette keeps the pair', async () => {
+  expect(SLOTS).toEqual(expect.arrayContaining(['promptFg', 'promptBg']))
+  expect(SLOT_HELP.promptFg).toContain('fg')
+  expect(SKINS.every(skin => skin.palette.promptFg === undefined && skin.palette.promptBg === undefined)).toBe(true)
+  expect(colourOf(tokyoNight.palette, 'promptFg'), 'unset, the text reads as fg').toBe(tokyoNight.palette.fg)
+  expect(colourOf(tokyoNight.palette, 'promptBg'), 'unset, there is no fill').toBeUndefined()
+
+  const made = buildCustom({ name: 'caution', base: 'gruvbox', palette: { promptFg: '#000000', promptBg: '#E0B000' } }, undefined)
+  const skin = resolveSkin('caution', { caution: made as Exclude<typeof made, string> })
+  const light = forTheme(skin!, true).palette
+
+  expect(skin?.palette.promptBg).toBe('#e0b000')
+  expect(light.promptFg, 'the text of a pair is kept').toBe('#000000')
+  expect(light.promptBg, 'the fill is deepened a little to stand off white').toBe(deepen('#e0b000', 0.12))
+  expect(toLight({ ...tokyoNight.palette, promptFg: '#ffffff' }).promptFg, 'a text colour alone is deepened like an accent').toBe(deepen('#ffffff', 0.45))
+  expect(toLight(tokyoNight.palette).promptFg, 'a light palette gains none of its own').toBeUndefined()
+  expect(buildCustom({ name: 'x', palette: { promptBg: 'yellow' } }, undefined)).toContain('bad palette')
+})
+
 test('the terminal skin paints the terminal in its own ANSI colours and keeps hex for the desktop', async () => {
   const skin = resolveSkin('terminal', {})
   const ansi = Object.values(skin?.ansi ?? {})
