@@ -110,6 +110,19 @@ Built-in skins: `noir`, `tokyo-night`, `dracula`, `catppuccin`, `rose-pine`, `no
 `design` tool, so it builds the skin and applies it while you watch. Repainting a built-in skin saves
 it as your own `my-<skin>`. Choices are remembered across sessions.
 
+**Example: a caution-sign prompt.** Like the yellow sign on a wet floor, your typed prompt can be
+bold black lettering on an amber panel, edged in black, so it reads at a glance among the replies. Ask
+Claude for "a caution-sign prompt", or save it yourself with the `design` tool:
+
+```json
+{ "action": "save", "name": "caution", "base": "noir",
+  "palette": { "promptFg": "#000000", "promptBg": "#e0b000", "border": "#000000" } }
+```
+
+`#e0b000` is a softened amber, in the family of real safety yellow but gentler on a dark terminal than
+pure `#ffd400`. Swap it for `#c9a000` (duller) or `#d99a00` (warmer) to taste. It shows in the
+terminal; the desktop app keeps Claude Code's own messages.
+
 ## Preview
 
 Drawn by the mod's own card code (`scripts/previews.ts`), not screenshots.
