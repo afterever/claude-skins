@@ -79,7 +79,7 @@ Built-in skins: `noir`, `tokyo-night`, `dracula`, `catppuccin`, `rose-pine`, `no
 | Command | What it does |
 |---|---|
 | `/skin tables on/text/off` | Tables as cards, as selectable text on the desktop, or Claude Code's own |
-| `/skin prompt left/right/plain` | In the terminal, which side your prompt's outline sits on, or a plain leading marker. The outline is drawn in the skin's optional `border` colour, or `muted` where a skin does not set one. A skin can also set `promptFg` and `promptBg` for the box's text and fill (black on yellow, like a road sign). The desktop keeps Claude Code's own messages, with copy and rewind |
+| `/skin prompt left/right/plain` | In the terminal, which side your prompt's outline sits on, or a plain leading marker. The outline is drawn in the skin's optional `border` colour, or `muted` where a skin does not set one. A skin can also set `promptFg` and `promptBg` for the box's text and fill (black bold on amber, like a road sign). The desktop keeps Claude Code's own messages, with copy and rewind |
 | `/skin words claude/skin` | Whose words the spinner and the turn footer show: Claude Code's own, or the skin's (the default) |
 | `/skin icons unicode/ascii` | The icon set, and ASCII-only diagrams in the terminal |
 

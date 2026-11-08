@@ -327,7 +327,9 @@ export function promptRow(look: Look, text: string, images?: ReturnType<Ui['Text
       >
         {plain ? <Text color={look.skin.palette.user}>{`${look.icons.prompt} `}</Text> : ''}
         {markdown === null || markdown.length > MAX_MARKDOWN || inked ? (
-          <Text color={colourOf(look.skin.palette, 'promptFg')}>{text}</Text>
+          <Text color={colourOf(look.skin.palette, 'promptFg')} {...(fill === undefined ? {} : { bold: true })}>
+            {text}
+          </Text>
         ) : (
           <Markdown text={markdown} />
         )}
