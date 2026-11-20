@@ -1,0 +1,135 @@
+# FORK.md: afterever's copy of claude-skins
+
+Read this first when upstream ships a release. Written 2026-11-20 against upstream 0.5.16.
+
+This is a fork of [hellosverre/claude-skins](https://github.com/hellosverre/claude-skins). The
+`afterever` branch is what my machines install. It is upstream plus a few patches, kept small
+so that taking an upstream release is a merge, a version bump and a test run.
+
+## What the fork adds
+
+| Piece | Where | Goes upstream? |
+|---|---|---|
+| Optional `border` palette slot for the prompt outline | `feat/border-slot`, upstream PR [#101](https://github.com/hellosverre/claude-skins/pull/101) (closes #96) | Yes, waiting on the owner |
+| Optional `promptFg` / `promptBg` slots (a "caution sign" prompt) | `feat/prompt-sign`, fork PR [afterever/claude-skins#1](https://github.com/afterever/claude-skins/pull/1), stacked on `feat/border-slot` | Maybe, once #101 is settled |
+| A built-in `cupertino` skin and a first-run look | the last commit on `afterever` | Never: it is my taste |
+
+`afterever` = upstream `main` + `feat/border-slot` + `feat/prompt-sign` + the personal commit.
+
+The personal commit is made of new files plus a few one-line edits, so it rarely conflicts:
+
+- new: `hooks/first-run.ts`, `hooks/themes/cupertino.ts`, `tests/first-run.test.ts`, this file
+- one line each: `hooks/themes/index.ts` (import and append `cupertino`), `hooks/register.tsx` (import and call `seedFirstRun($)` first in `load`), `.claude-plugin/plugin.json` (the version suffix)
+- two test lines: `tests/logic.test.ts` (the built-in skin count) and `tests/rows.test.tsx` (one import and one assertion that the pinned test saw the seed)
+
+`DEFAULT_PREFS` is deliberately **not** edited. Upstream's tests treat it as the reference, and
+editing it broke about thirty of them. `FIRST_RUN_PREFS` spreads it and overrides eight values;
+`seedFirstRun` writes that record to the store once, only when no prefs were ever saved. A machine
+with saved prefs is never touched, and test stubs never persist a write, so they see upstream's
+defaults.
+
+## When upstream ships a release
+
+Check for one now and then (nothing tells me): `gh release list --repo hellosverre/claude-skins --limit 3`.
+
+```
+git fetch origin
+git checkout afterever
+git log --oneline HEAD..origin/main        # what is coming
+git merge origin/main                      # a merge, not a rebase: nobody has to force-push
+```
+
+Resolve any conflicts (see "Conflicts" below), then:
+
+1. **Bump the version** in `.claude-plugin/plugin.json` to the upstream version plus a suffix:
+   `0.5.17-afterever.1`. The next fork-only change on the same upstream version is `.2`. This is
+   not cosmetic: Claude Code's plugin cache is keyed by version
+   (`~/.claude/plugins/cache/<marketplace>/skins/<version>`), so an unchanged version can look
+   like "nothing new" and never be fetched.
+2. **Run the checks** from the repo root (Git Bash). All three must be clean:
+   ```
+   claude plugin test . 2>&1 | grep -E "\(fail\)|^ *[0-9]+ (pass|fail)"      # expect 0 fail
+   claude plugin validate .                                                   # passes; host-typing warnings are normal
+   mkdir -p .claude/types && cp -r .claude-plugin/types/. .claude/types/ && rm -f .claude/types/tsconfig.json && npx -y -p typescript@5.9.3 tsc -p tsconfig.json   # no output
+   ```
+   Do not pipe the test run to `tail`: it hides the exit code.
+3. **Commit and push**: `git commit` the merge and the bump, then `git push fork afterever`.
+4. **Pick it up on each machine**: `claude plugin marketplace update afterever-mods`, then
+   `claude plugin update skins@afterever-mods`, then restart Claude Code. `afterever-mods` has
+   `autoUpdate` on, so a restart alone usually does it.
+
+## Conflicts: where they will be
+
+Upstream touched these files only a handful of times a month, so most releases merge cleanly.
+
+| Conflict | Fix |
+|---|---|
+| `tests/logic.test.ts`: `expect(SKINS.length).toBe(N)` | Upstream added a skin. Set it to upstream's count plus one (mine is the extra). |
+| `hooks/themes/index.ts` | Keep upstream's list and keep `cupertino` last. |
+| `hooks/register.tsx` around `load` | Keep upstream's code and keep the `seedFirstRun($)` line first in `load`. |
+| `.claude-plugin/plugin.json` version | Take upstream's number and add the suffix again. |
+| `border` / `promptFg` / `promptBg` files (`hooks/skin.ts`, `custom.ts`, `light.ts`, `rows.tsx`, `settings.tsx`, `types/index.d.ts`, tests) | Only if upstream changed these. See "When #101 is merged or reshaped". |
+| A new upstream test fails because of the first-run seed | A test with its own store that asserts "nothing saved yet". Fix it as `tests/rows.test.tsx` was fixed: expect `FIRST_RUN_PREFS` there. |
+
+A new upstream **pref** needs nothing: `FIRST_RUN_PREFS` spreads `DEFAULT_PREFS`, so it gets
+upstream's value. Add an override in `hooks/first-run.ts` only if I want it different.
+
+## When #101 is merged or reshaped
+
+- **Merged as written** (squash or not): `git merge origin/main` brings it in and the identical
+  change on my side should merge without conflict. Then `feat/border-slot` is done: delete it
+  locally and on the fork.
+- **Merged in a different shape** (another slot name, or a different fallback): upstream's shape
+  wins. Take upstream's files, then re-apply what `feat/prompt-sign` and the personal commit need
+  on top, and update `feat/prompt-sign` the same way. A `cupertino` that sets a `border` should use
+  the new name.
+- **Rejected**: nothing to do. The fork keeps the patch; keep merging upstream.
+- **`promptFg`/`promptBg` merged upstream**: same as the first case, for `feat/prompt-sign`.
+- When both are in upstream, the fork is just the personal commit. That is the moment to ask
+  whether the fork is still worth keeping.
+
+## Changing the fork itself
+
+- **A change I would send upstream** goes on its own `feat/…` or `fix/…` branch from `origin/main`
+  (never from `afterever`), as a PR to `hellosverre/claude-skins`. Then merge that branch into
+  `afterever`. The owner's process: an issue with lettered options, an answer by letter, then a
+  PR whose body has "What changed / Checked locally / Things you may want a different way"; the
+  commit title is `feat: …` or `fix: …`.
+- **A change only I want** goes straight on `afterever` with a `chore:` title, and bumps the suffix.
+- **Another look value on a fresh install**: edit `FIRST_RUN_PREFS` in `hooks/first-run.ts`. It
+  only affects machines with nothing saved. A machine that already has prefs keeps them, so change
+  those there with `/skin`.
+- **A different `cupertino` colour**: edit `hooks/themes/cupertino.ts`. A stored custom skin with
+  the same name is shadowed by the built-in (`skinNames` drops it), so nothing is left to migrate.
+  Editing a slot of a built-in skin in the settings pane forks it into `my-cupertino`.
+
+## How a machine installs it
+
+The `skins` entry in `afterever/claude-craftkits` (`.claude-plugin/marketplace.json`) is
+`{ "source": "github", "repo": "afterever/claude-skins", "ref": "afterever" }`, so the plugin ID is
+`skins@afterever-mods`.
+
+```
+claude plugin marketplace add afterever/claude-craftkits     # once per machine
+claude plugin install skins@afterever-mods
+```
+
+Move a machine over from upstream: back up `~/.claude/plugins/store/skins_hellosverre-mods-*.json`
+first, then `claude plugin uninstall skins@hellosverre-mods`, install the fork, restart. Never run
+both at once: two `skins` plugins would both register `/skin` and the same hooks. A machine with no
+saved prefs starts as `cupertino` with the first-run look; one that already has a store keeps it
+(the store file is named for the plugin and the marketplace, `skins_<marketplace>-<hash>.json`, so
+I expect the fork to start with an empty store and be seeded; check `/skin list` after the first
+start, and if it did not seed, copy `custom` and `prefs` over from the backup).
+
+Back to upstream: `claude plugin uninstall skins@afterever-mods`, then
+`claude plugin marketplace add hellosverre/claude-skins` and
+`claude plugin install skins@hellosverre-mods`, then rebuild `cupertino` from the table in
+craftkits' `SETUP.md`.
+
+## Housekeeping
+
+- `fork/main` is an unused mirror and is far behind upstream. To refresh it:
+  `git push fork origin/main:main`. Nothing installs from it.
+- `.claude/types/` is the type check's scratch copy of the host typings; it is git-ignored.
+- Pushes to the fork are manual. No auto-push hook applies to this repo.
