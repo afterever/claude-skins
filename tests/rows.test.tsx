@@ -3,6 +3,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine, Plugin } from 'claude-code/testing'
 
 import { DESIGN_TOOL } from '../hooks/designer'
+import { FIRST_RUN_PREFS } from '../hooks/first-run'
 import { widthOf } from '../hooks/markdown'
 import { mermaidArt } from '../hooks/mermaid-art'
 import { literal } from '../hooks/rows'
@@ -1390,7 +1391,7 @@ test('/skin pin keeps a look to this folder, /skin unpin returns to the default'
   await runSkin($, 'nord')
 
   expect((store.folders as Record<string, { skin: string }>)['/work']?.skin).toBe('nord')
-  expect(store.prefs).toBeUndefined()
+  expect(store.prefs).toEqual(FIRST_RUN_PREFS)
 
   await runSkin($, 'unpin')
   await runSkin($, 'dracula')

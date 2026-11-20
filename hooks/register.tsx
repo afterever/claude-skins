@@ -14,6 +14,7 @@ import { disclosedRow, openedRows } from './detail-rows'
 import { copyOf } from './markdown'
 import { CHART_HINT } from './mermaid'
 import { commandSegments } from './command-output'
+import { seedFirstRun } from './first-run'
 import { askBand, desktopSpinnerRow, diffCard, footerRow, terminalCard, usageBand, groupRow, promptRow, quietResult, replyRows, spinnerRow, toolRow } from './rows'
 import type { Look, SvgElement, Ui } from './rows'
 import { galleryPane } from './gallery'
@@ -385,6 +386,7 @@ function parseCustom(raw: unknown): Record<string, CustomSkin> {
 }
 
 async function load($: EngineInterface): Promise<void> {
+  await seedFirstRun($)
   const custom = parseCustom(await $.store.get('custom'))
   const names = skinNames(custom)
   const folders = parseFolders(await $.store.get('folders'), names)

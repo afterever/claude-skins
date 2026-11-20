@@ -1,5 +1,6 @@
 import ayu from './ayu'
 import catppuccin from './catppuccin'
+import cupertino from './cupertino'
 import dracula from './dracula'
 import everforest from './everforest'
 import github from './github'
@@ -34,4 +35,5 @@ export const SKINS: readonly Skin[] = [
   nightOwl,
   mono,
   terminal,
+  cupertino,
 ]
