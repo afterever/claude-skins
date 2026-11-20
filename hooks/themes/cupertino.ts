@@ -20,6 +20,9 @@ const skin: Skin = {
     ok: '#30d158',
     err: '#ff4245',
     warn: '#ff6a00',
+    // The typed prompt as a caution sign: bold black on a soft amber. Both, or no fill draws.
+    promptFg: '#000000',
+    promptBg: '#e0b000',
   },
   spinner: ['Thinking', 'Working', 'Composing', 'Considering', 'Weighing'],
   done: ['Done', 'Finished', 'Settled'],

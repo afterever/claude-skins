@@ -171,7 +171,9 @@ test('border is an optional slot: no built-in sets it, a made skin may, and its 
 test('promptFg and promptBg are optional slots: text follows fg, no fill, and the light palette keeps the pair', async () => {
   expect(SLOTS).toEqual(expect.arrayContaining(['promptFg', 'promptBg']))
   expect(SLOT_HELP.promptFg).toContain('fg')
-  expect(SKINS.every(skin => skin.palette.promptFg === undefined && skin.palette.promptBg === undefined)).toBe(true)
+  // afterever's fork: the built-in `cupertino` is the one skin that ships the pair (a caution sign).
+  expect(SKINS.filter(skin => skin.name !== 'cupertino').every(skin => skin.palette.promptFg === undefined && skin.palette.promptBg === undefined)).toBe(true)
+  expect(SKINS.find(skin => skin.name === 'cupertino')?.palette).toMatchObject({ promptFg: '#000000', promptBg: '#e0b000' })
   expect(colourOf(tokyoNight.palette, 'promptFg'), 'unset, the text reads as fg').toBe(tokyoNight.palette.fg)
   expect(colourOf(tokyoNight.palette, 'promptBg'), 'unset, there is no fill').toBeUndefined()
 
@@ -561,7 +563,9 @@ test('every built-in skin names itself once and fills every slot with a colour, 
 
   for (const skin of SKINS) {
     for (const palette of [skin.palette, ...(skin.light === undefined ? [] : [skin.light])]) {
-      expect(Object.keys(palette).sort()).toEqual([...slots].sort())
+      // afterever's fork: `cupertino` also sets the optional promptFg/promptBg pair.
+      const required = Object.keys(palette).filter(key => key !== 'promptFg' && key !== 'promptBg')
+      expect(required.sort()).toEqual([...slots].sort())
       expect(Object.values(palette).every(value => hex.test(value))).toBe(true)
     }
 
