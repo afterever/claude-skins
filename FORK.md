@@ -136,9 +136,12 @@ craftkits' `SETUP.md`.
 
 ## Housekeeping
 
-- Safe to delete once you are happy with the merge: local `backup/afterever-pre-merge-0.5.16-afterever.2`
-  (the branch as it was before the 2026-11-22 merge, `0ee4e1e`), and `feat/border-slot` on the fork
-  (upstream has it). Fork PR #1 is based on `feat/border-slot`; retarget or close it before deleting that branch.
+- Branches kept on purpose: `feat/prompt-sign` (the fork-only prompt sign as its own branch, in case
+  it is ever sent upstream; fork PR #1 for it was closed) and `screenshots` (the image in the #101
+  comment is served from it: do not delete). The 2026-11-22 cleanup deleted every branch whose upstream
+  PR was merged with a matching tip.
+- Safe to delete when you are happy with the merge: the local `backup/afterever-pre-merge-0.5.16-afterever.2`
+  (the branch as it was before the 2026-11-22 merge, `0ee4e1e`).
 - `fork/main` is an unused mirror and is far behind upstream. To refresh it:
   `git push fork origin/main:main`. Nothing installs from it.
 - `.claude/types/` is the type check's scratch copy of the host typings; it is git-ignored.
