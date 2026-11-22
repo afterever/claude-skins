@@ -14,10 +14,11 @@ import { fitColumns, kindOfCell, measure, tableSvg, wrapCell } from '../hooks/sv
 import { outputLines, shellOutputOf, terminalSvg } from '../hooks/svg-terminal'
 import { countdownOf, countdownsOf, limitLabel, meterColor, metersKey, metersOf, usageSvg } from '../hooks/svg-usage'
 import { isNewer, starStep, updateNotice } from '../hooks/updates'
-import { deepen, forTheme, gnomeDark, isLightTheme, macDark, resolveLight, toLight, windowsDark } from '../hooks/light'
+import { deepen, forTheme, gnomeDark, isDarkText, isLightTheme, macDark, resolveLight, toLight, windowsDark } from '../hooks/light'
 import { parseFolders, prefsFor, withFolder, withoutFolder } from '../hooks/folders'
 import { kindOf, summarize, toolLabel } from '../hooks/tools'
 import { SKINS } from '../hooks/themes'
+import { turnKey } from '../hooks/register'
 import { inlineRuns, splitBlocks } from '../hooks/blocks'
 import { errorLine, isQuiet, isReadOnlyShell, segmentsOf } from '../hooks/quiet'
 import tokyoNight from '../hooks/themes/tokyo-night'
@@ -134,6 +135,20 @@ test('wide characters count two cells, so CJK cells are measured and cut in term
   expect(wrapLines('In one place: the orchestrator', 14, 6)).toEqual(['In one place:', 'the', 'orchestrator'])
   expect(wrapLines('레일 스피너 카탈로그', 7, 6).every(line => widthOf(line) <= 7)).toBe(true)
   expect(wrapLines('word '.repeat(40), 10, 2)).toEqual(['word word', 'word word…'])
+})
+
+test('turn footer stats keep the newest turns, short ones included (#106)', async () => {
+  const kept = 40
+  const add = (turns: Record<string, number>, ms: number) => Object.fromEntries([...Object.entries(turns), [turnKey(ms), ms]].slice(-kept))
+  let turns: Record<string, number> = {}
+
+  for (let i = 0; i < kept; i += 1) {
+    turns = add(turns, 60000 + i)
+  }
+  turns = add(turns, 900)
+
+  expect(turns[turnKey(900)], 'the newest, shortest turn').toBe(900)
+  expect(turns[turnKey(60000)], 'the oldest turn is the one trimmed').toBeUndefined()
 })
 
 test('a made skin lays its slots over its base, and bad drafts are refused with a reason', async () => {
@@ -312,6 +327,25 @@ test('words are the skin’s or Claude Code’s, and anything else stored reads 
   expect(runSkinCommand('words mine', DEFAULT_PREFS, NAMES).message).toBe('usage: /skin words claude|skin')
   expect(runSkinCommand('words', DEFAULT_PREFS, NAMES).prefs.words).toBe('skin')
   expect(runSkinCommand('list', { ...DEFAULT_PREFS, words: 'claude' }, NAMES).message).toMatch(/\| words +\| claude +\|/)
+})
+
+test('inline code is the skin’s colour or the accent red, and anything else stored reads as the skin’s', async () => {
+  expect(DEFAULT_PREFS.code).toBe('skin')
+  expect(parsePrefs({ code: 'accent' }, NAMES).code).toBe('accent')
+  expect(parsePrefs({ code: 'red' }, NAMES).code).toBe('skin')
+  expect(parsePrefs({}, NAMES).code).toBe('skin')
+  expect(runSkinCommand('code accent', DEFAULT_PREFS, NAMES).prefs.code).toBe('accent')
+  expect(runSkinCommand('code skin', { ...DEFAULT_PREFS, code: 'accent' }, NAMES).prefs.code).toBe('skin')
+  expect(runSkinCommand('code red', DEFAULT_PREFS, NAMES).message).toBe('usage: /skin code skin|accent')
+  expect(runSkinCommand('list', { ...DEFAULT_PREFS, code: 'accent' }, NAMES).message).toMatch(/\| code +\| accent +\|/)
+  expect(runSkinCommand('help', DEFAULT_PREFS, NAMES).message).toContain('/skin code skin/accent')
+})
+
+test('a palette’s body colour tells a light background from a dark one', async () => {
+  expect(isDarkText(forTheme(noir, true).palette.fg)).toBe(true)
+  expect(isDarkText(noir.palette.fg)).toBe(false)
+  expect(isDarkText(toLight(tokyoNight.palette).fg)).toBe(true)
+  expect(isDarkText('ansi256(7)')).toBe(false)
 })
 
 test('expand opens every tool group, is off by default, and anything but a boolean stored reads as off', async () => {
@@ -525,11 +559,20 @@ test('a light palette is derived with dark text, light bands and deepened colour
   const light = toLight(tokyoNight.palette)
 
   expect(light.fg).toBe('#1f1f1f')
-  expect(light.surface).toBe('#ffffff')
+  expect(light.surface).toBe('#ededed')
   expect(light.run).toBe(deepen(tokyoNight.palette.run, 0.45))
   expect(deepen('#ffffff', 0.5)).toBe('#808080')
   expect(isLightTheme('light-daltonized')).toBe(true)
   expect(isLightTheme('dark')).toBe(false)
+})
+
+test('every light palette draws its bands a step off a white background', async () => {
+  for (const skin of SKINS.filter(each => each.ansi === undefined)) {
+    const { surface, zebra } = forTheme(skin, true).palette
+
+    expect([skin.name, surface]).not.toEqual([skin.name, '#ffffff'])
+    expect([skin.name, zebra]).not.toEqual([skin.name, '#ffffff'])
+  }
 })
 
 test('SKINS_THEME wins, then the theme, then the terminal and the system for auto', async () => {
