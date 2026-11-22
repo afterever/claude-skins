@@ -10,11 +10,20 @@ so that taking an upstream release is a merge, a version bump and a test run.
 
 | Piece | Where | Goes upstream? |
 |---|---|---|
-| Optional `border` palette slot for the prompt outline | `feat/border-slot`, upstream PR [#101](https://github.com/hellosverre/claude-skins/pull/101) (closes #96) | Yes, waiting on the owner |
-| Optional `promptFg` / `promptBg` slots (a "caution sign" prompt) | `feat/prompt-sign`, fork PR [afterever/claude-skins#1](https://github.com/afterever/claude-skins/pull/1), stacked on `feat/border-slot` | Maybe, once #101 is settled |
+| Optional `border` palette slot for the prompt outline | upstream PR [#101](https://github.com/hellosverre/claude-skins/pull/101), **merged 2026-11-22** as `f93ba84` (identical to my branch) | Done: it is upstream now |
+| Optional `promptFg` / `promptBg` slots (a "caution sign" prompt) | `feat/prompt-sign`, fork PR [afterever/claude-skins#1](https://github.com/afterever/claude-skins/pull/1) | **No, kept in the fork.** I mentioned it in a comment on #101 and the owner never answered; silence is not a yes. If the conflicts on each merge get tiresome, open an issue with lettered options (the owner's way) before sending a PR |
 | A built-in `cupertino` skin and a first-run look | the last commit on `afterever` | Never: it is my taste |
 
-`afterever` = upstream `main` + `feat/border-slot` + `feat/prompt-sign` + the personal commit.
+`afterever` = upstream `main` + the `promptFg`/`promptBg` commits + the personal commit. Last merged
+with upstream `main` at `a4cdb19` (2026-11-22, version `0.5.16-afterever.3`). Upstream `v0.5.16` is
+still its latest release; `main` is ahead of it, and the fork now carries those unreleased commits.
+
+The `promptFg`/`promptBg` commits extend lines upstream's `border` slot also touches, so a merge
+conflicts in the same places each time: `types/index.d.ts`, `hooks/custom.ts`, `hooks/light.ts`,
+`hooks/rows.tsx`, `hooks/settings.tsx`, `hooks/skin.ts`, `skills/skin-designer/SKILL.md`, `README.md`,
+`tests/logic.test.ts`, `tests/rows.test.tsx`. In the 2026-11-22 merge every hunk had upstream's side as
+a strict subset of mine, so each kept mine. Resolve hunk by hunk (not `git checkout --ours`, which
+drops upstream's other changes in the same file) and read each hunk before keeping a side.
 
 The personal commit is made of new files plus a few one-line edits, so it rarely conflicts:
 
@@ -74,19 +83,16 @@ Upstream touched these files only a handful of times a month, so most releases m
 A new upstream **pref** needs nothing: `FIRST_RUN_PREFS` spreads `DEFAULT_PREFS`, so it gets
 upstream's value. Add an override in `hooks/first-run.ts` only if I want it different.
 
-## When #101 is merged or reshaped
+## History: #101
 
-- **Merged as written** (squash or not): `git merge origin/main` brings it in and the identical
-  change on my side should merge without conflict. Then `feat/border-slot` is done: delete it
-  locally and on the fork.
-- **Merged in a different shape** (another slot name, or a different fallback): upstream's shape
-  wins. Take upstream's files, then re-apply what `feat/prompt-sign` and the personal commit need
-  on top, and update `feat/prompt-sign` the same way. A `cupertino` that sets a `border` should use
-  the new name.
-- **Rejected**: nothing to do. The fork keeps the patch; keep merging upstream.
-- **`promptFg`/`promptBg` merged upstream**: same as the first case, for `feat/prompt-sign`.
-- When both are in upstream, the fork is just the personal commit. That is the moment to ask
-  whether the fork is still worth keeping.
+#101 was merged as written (squash), so the first merge of `origin/main` brought it in. The
+`feat/border-slot` branch is now redundant (see Housekeeping). It did conflict, though: not because
+upstream changed #101, but because `promptFg`/`promptBg` sit on lines next to `border`, and git
+compares against the old common ancestor.
+
+If `promptFg`/`promptBg` ever reach upstream, take upstream's shape (it wins), re-apply what the
+personal commit needs on top, and then ask whether the fork is still worth keeping: it would be only
+`cupertino` and the first-run seed.
 
 ## Changing the fork itself
 
@@ -129,6 +135,9 @@ craftkits' `SETUP.md`.
 
 ## Housekeeping
 
+- Safe to delete once you are happy with the merge: local `backup/afterever-pre-merge-0.5.16-afterever.2`
+  (the branch as it was before the 2026-11-22 merge, `0ee4e1e`), and `feat/border-slot` on the fork
+  (upstream has it). Fork PR #1 is based on `feat/border-slot`; retarget or close it before deleting that branch.
 - `fork/main` is an unused mirror and is far behind upstream. To refresh it:
   `git push fork origin/main:main`. Nothing installs from it.
 - `.claude/types/` is the type check's scratch copy of the host typings; it is git-ignored.
