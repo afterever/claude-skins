@@ -15,7 +15,7 @@ so that taking an upstream release is a merge, a version bump and a test run.
 | A built-in `cupertino` skin and a first-run look | the last commit on `afterever` | Never: it is my taste |
 
 `afterever` = upstream `main` + the `promptFg`/`promptBg` commits + the personal commit. Last merged
-with upstream `main` at `a4cdb19` (2026-11-22, version `0.5.16-afterever.3`). Upstream `v0.5.16` is
+with upstream `main` at `a4cdb19` (2026-11-22, version `0.5.16-afterever.20261122`). Upstream `v0.5.16` is
 still its latest release; `main` is ahead of it, and the fork now carries those unreleased commits.
 
 The `promptFg`/`promptBg` commits extend lines upstream's `border` slot also touches, so a merge
@@ -50,9 +50,10 @@ git merge origin/main                      # a merge, not a rebase: nobody has t
 
 Resolve any conflicts (see "Conflicts" below), then:
 
-1. **Bump the version** in `.claude-plugin/plugin.json` to the upstream version plus a suffix:
-   `0.5.17-afterever.1`. The next fork-only change on the same upstream version is `.2`. This is
-   not cosmetic: Claude Code's plugin cache is keyed by version
+1. **Bump the version** in `.claude-plugin/plugin.json` to the upstream version plus the date of
+   the build: `0.5.17-afterever.20261215` (`afterever.YYYYMMDD`). A second build on the same day
+   adds a counter: `0.5.17-afterever.20261215.1`. Both sort above the older suffixes (`.2`, `.3`,
+   and any earlier date). No git tag: the install reads the `afterever` branch. This is not cosmetic: Claude Code's plugin cache is keyed by version
    (`~/.claude/plugins/cache/<marketplace>/skins/<version>`), so an unchanged version can look
    like "nothing new" and never be fetched.
 2. **Run the checks** from the repo root (Git Bash). All three must be clean:
