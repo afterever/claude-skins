@@ -43,10 +43,11 @@ every change shows on screen the moment the call returns.
   to read as part of the look without brightening `muted`, which also paints commands and paths.
 - **A prompt box like a road sign.** For a box that really stands out, set `promptFg` and `promptBg`
   together: the text and the fill of the typed prompt. Black on yellow is `promptFg: "#000000"`,
-  `promptBg: "#e0b000"` (a softer amber than pure yellow, which glares on a dark terminal), with
-  `border` black or a deeper amber. The text is drawn bold when there is a fill. Keep the pair
-  clearly readable against each other; the fill only draws when `promptFg` is set. Like the outline, this shows in the
-  terminal; the desktop keeps Claude Code's own messages. Leave both out for the usual box.
+  `promptBg: "#e0b000"` (a softer amber than pure yellow, which glares on a dark terminal). The box is
+  drawn as a solid plate with no outline, so `border` does nothing there, and the text is drawn bold.
+  Keep the pair clearly readable against each other; the fill only draws when `promptFg` is set. Like
+  the outline, this shows in the terminal; the desktop keeps Claude Code's own messages. Leave both
+  out for the usual box.
 - **Kinds told apart.** `read`, `write`, `run`, `search`, `web` and `mcp` colour tool names. Give the
   common ones (`run`, `write`, `read`) clearly different hues.
 - **Status stays conventional.** Keep `ok` green-ish and `err` red-ish whatever the theme.

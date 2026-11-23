@@ -1174,7 +1174,7 @@ export const register: Register = on => {
     const hasImages = await read($, memberOf(imagesAtom, e))
 
     // Claude Code draws the images; the text is already in the outline above them.
-    return promptRow(look, e.props.text, hasImages ? await next({ ...e, props: { ...e.props, text: '' } }) : undefined)
+    return promptRow(look, e.props.text, hasImages ? await next({ ...e, props: { ...e.props, text: '' } }) : undefined, e.viewport?.columns ?? 100)
   })
 
   // While charts are drawn, the model learns it can answer a "show me" with a Mermaid

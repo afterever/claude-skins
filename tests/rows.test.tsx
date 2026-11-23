@@ -387,12 +387,30 @@ test('a skin that sets promptFg and promptBg draws the typed prompt as a sign', 
 
   await $.tool.call({ tool: 'mcp__skins__design', action: 'save', name: 'caution', base: 'gruvbox', palette: { promptFg: '#000000', promptBg: '#e0b000' } })
 
-  const sign = await prompt()
-  expect(sign.box?.backgroundColor, 'the fill').toBe('#e0b000')
-  expect(sign.text?.color, 'the text').toBe('#000000')
-  expect(sign.text?.bold, 'sign lettering is bold').toBe(true)
+  // The sign is a plate of Text rows: a half-block rim in the fill's colour above and below the
+  // text, so the fill reaches the box edge, which a Box border cannot paint.
+  const plate = async (words: string, columns = 100) => {
+    const typed = await $.ui.mount({ ...SITE, viewport: { columns, rows: 30 }, surface: 'terminal', component: 'UserMessage', requestId: 'm2', props: { text: words, origin: { kind: 'composer' }, isExpanded: false } })
+    const rims = await typed.findAll({ type: 'Text', text: /^[▄▀]+$/ })
+    const rows = await typed.findAll({ type: 'Text', text: /^ .* $/ })
+    const markdown = await typed.find({ type: 'Markdown' })
+    await typed.unmount()
+
+    return { rims, rows, markdown }
+  }
+
+  const sign = await plate('fix the build')
+  expect(sign.rims.map(rim => rim.text), 'a rim above and below, the width of the text and its padding').toEqual(['▄'.repeat(17), '▀'.repeat(17)])
+  expect(sign.rims.map(rim => (rim.props as Props).color), 'in the fill colour').toEqual(['#e0b000', '#e0b000'])
+  expect(sign.rows.map(row => row.text)).toEqual([' fix the build '])
+  expect(sign.rows[0]?.props, 'the text on the fill, in the sign lettering').toMatchObject({ backgroundColor: '#e0b000', color: '#000000', bold: true })
   expect(sign.markdown, 'drawn as Text: the host Markdown takes no colour').toBeUndefined()
-  expect(sign.box?.borderColor, 'the outline still follows muted').toBe(gruvbox.palette.muted)
+
+  const wrapped = await plate('one two three four five six seven eight', 20)
+  const widths = wrapped.rows.map(row => [...(row.text ?? '')].length)
+  expect(widths.length, 'a long prompt wraps to the viewport').toBeGreaterThan(1)
+  expect(Math.max(...widths), 'no row passes the width left by the rims').toBeLessThanOrEqual(18)
+  expect(new Set(widths).size, 'every row is padded to one width, so the plate stays rectangular').toBe(1)
 
   await $.tool.call({ tool: 'mcp__skins__design', action: 'save', name: 'fill-only', base: 'gruvbox', palette: { promptBg: '#e0b000' } })
   expect((await prompt()).box?.backgroundColor, 'a fill without promptFg is not drawn').toBeUndefined()

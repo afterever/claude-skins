@@ -11,7 +11,7 @@ so that taking an upstream release is a merge, a version bump and a test run.
 | Piece | Where | Goes upstream? |
 |---|---|---|
 | Optional `border` palette slot for the prompt outline | upstream PR [#101](https://github.com/hellosverre/claude-skins/pull/101), **merged 2026-11-22** as `f93ba84` (identical to my branch) | Done: it is upstream now |
-| Optional `promptFg` / `promptBg` slots (a "caution sign" prompt) | `feat/prompt-sign`, fork PR [afterever/claude-skins#1](https://github.com/afterever/claude-skins/pull/1) | **No, kept in the fork.** I mentioned it in a comment on #101 and the owner never answered; silence is not a yes. If the conflicts on each merge get tiresome, open an issue with lettered options (the owner's way) before sending a PR |
+| Optional `promptFg` / `promptBg` slots (a "caution sign" prompt). With a fill the prompt is drawn as a solid plate: `Text` rows rimmed in half blocks of the fill colour, wrapped to the viewport, no outline, `border` ignored (a Box border cannot paint its own background, so it left a visible rim on a dark or a light terminal). The plate is on `afterever` only, not on `feat/prompt-sign` | `feat/prompt-sign`, fork PR [afterever/claude-skins#1](https://github.com/afterever/claude-skins/pull/1) | **No, kept in the fork.** I mentioned it in a comment on #101 and the owner never answered; silence is not a yes. If the conflicts on each merge get tiresome, open an issue with lettered options (the owner's way) before sending a PR |
 | A built-in `cupertino` skin and a first-run look | the last commit on `afterever` | Never: it is my taste |
 
 `afterever` = upstream `main` + the `promptFg`/`promptBg` commits + the personal commit. Last merged
@@ -53,7 +53,8 @@ Resolve any conflicts (see "Conflicts" below), then:
 1. **Bump the version** in `.claude-plugin/plugin.json` to the upstream version plus the date of
    the build: `0.5.17-afterever.20261215` (`afterever.YYYYMMDD`). A second build on the same day
    adds a counter: `0.5.17-afterever.20261215.1`. Both sort above the older suffixes (`.2`, `.3`,
-   and any earlier date). No git tag: the install reads the `afterever` branch. This is not cosmetic: Claude Code's plugin cache is keyed by version
+   and any earlier date). Tag the pushed commit `v<version>` (`v0.5.16-afterever.20261123`) and make a
+   GitHub release on the fork as a marker; the install still reads the `afterever` branch, not the tag. This is not cosmetic: Claude Code's plugin cache is keyed by version
    (`~/.claude/plugins/cache/<marketplace>/skins/<version>`), so an unchanged version can look
    like "nothing new" and never be fetched.
 2. **Run the checks** from the repo root (Git Bash). All three must be clean:

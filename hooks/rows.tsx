@@ -308,7 +308,7 @@ export const literal = (text: string): string =>
 // and `/skin prompt plain` drops the outline for the skin's prompt marker.
 // On the desktop app the text is the app's own Markdown, which can be selected and copied;
 // a prompt too long for one Markdown block keeps the Text.
-export function promptRow(look: Look, text: string, images?: ReturnType<Ui['Text']>) {
+export function promptRow(look: Look, text: string, images?: ReturnType<Ui['Text']>, columns = 100) {
   const { Box, Markdown, Text } = look.ui
   const markdown = look.surface === 'terminal' ? null : literal(text)
   const plain = look.prefs.prompt === 'plain'
@@ -318,18 +318,43 @@ export function promptRow(look: Look, text: string, images?: ReturnType<Ui['Text
   const inked = look.skin.palette.promptFg !== undefined
   const fill = inked && !plain ? look.skin.palette.promptBg : undefined
 
+  // A skin that fills its prompt draws it as a plate: the fill's own colour as a half-block rim
+  // above, beside and below the text, so the fill reaches the edge of the box. A Box border cannot
+  // do that, its cells take the terminal's background. Fixed-width rows cannot wrap themselves,
+  // so the text is wrapped to `columns` here.
+  if (fill !== undefined) {
+    const ink = colourOf(look.skin.palette, 'promptFg')
+    const room = Math.max(8, columns - 4)
+    const rows = text.split('\n').flatMap(line => wrapLines(line, room, Infinity))
+    const inner = Math.max(...rows.map(widthOf)) + 2
+
+    return (
+      <Box flexDirection="column" alignItems={look.prefs.prompt === 'right' ? 'flex-end' : 'flex-start'} marginY={1}>
+        <Text color={fill}>{'▄'.repeat(inner + 2)}</Text>
+        {rows.map((row, index) => (
+          <Text key={`row${index}`}>
+            <Text color={fill}>█</Text>
+            <Text color={ink} backgroundColor={fill} bold>
+              {` ${row}${' '.repeat(inner - 2 - widthOf(row))} `}
+            </Text>
+            <Text color={fill}>█</Text>
+          </Text>
+        ))}
+        <Text color={fill}>{'▀'.repeat(inner + 2)}</Text>
+        {images ?? ''}
+      </Box>
+    )
+  }
+
   return (
     <Box flexDirection="column" alignItems={look.prefs.prompt === 'right' ? 'flex-end' : 'flex-start'} marginY={1}>
       <Box
         {...(plain ? {} : { borderStyle: 'round' as const, borderColor: colourOf(look.skin.palette, 'border'), paddingX: 1 })}
-        {...(fill === undefined ? {} : { backgroundColor: fill })}
         flexShrink={1}
       >
         {plain ? <Text color={look.skin.palette.user}>{`${look.icons.prompt} `}</Text> : ''}
         {markdown === null || markdown.length > MAX_MARKDOWN || inked ? (
-          <Text color={colourOf(look.skin.palette, 'promptFg')} {...(fill === undefined ? {} : { bold: true })}>
-            {text}
-          </Text>
+          <Text color={colourOf(look.skin.palette, 'promptFg')}>{text}</Text>
         ) : (
           <Markdown text={markdown} />
         )}
